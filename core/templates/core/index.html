@@ -42,11 +42,46 @@
 </div>
 <!--  Hero End -->
 
+<!--  Barra de busqueda -->
+
+<style>
+    .search-form {
+        text-align: center;
+        margin-top: 50px; /* Ajusta según sea necesario */
+    }
+
+    .search-form input[type="text"] {
+        width: 300px; /* Ajusta el ancho del campo de búsqueda */
+        padding: 10px;
+        border: 1px solid #ccc; /* Cambia el color del borde */
+        border-radius: 5px; /* Agrega bordes redondeados */
+        outline: none; /* Quita el contorno al seleccionar */
+    }
+
+    .search-form button[type="submit"] {
+        padding: 10px 20px;
+        background-color: #A1D6E2; /* Cambia el color de fondo del botón */
+        color: white; /* Cambia el color del texto del botón */
+        border: none;
+        border-radius: 5px; /* Agrega bordes redondeados */
+        cursor: pointer;
+    }
+
+    .search-form button[type="submit"]:hover {
+        background-color: #A1D6E2; /* Cambia el color de fondo al pasar el cursor sobre el botón */
+    }
+</style>
+
+<div class="search-form">
+    <form method="GET" action="{% url 'index' %}">
+        <input type="text" name="q" placeholder="Buscar productos..." size="80">
+        <button type="submit">Buscar</button>
+    </form>
+</div>
 
 
-<!-- About Start -->
 
-<!-- About End -->
+<!--  final barra de busqueda -->
 
 <!-- prodiuctos populares-->
 

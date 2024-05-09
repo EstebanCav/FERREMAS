@@ -40,6 +40,7 @@ urlpatterns = [
     path('deleteSuscripcion/<id>/', deleteSuscripcion, name='deleteSuscripcion'),
     path('updateSuscripcion/<id>/',updateSuscripcion,name='updateSuscripcion'),
     path('salir/', salir, name='salir'),
+    
 
 
 

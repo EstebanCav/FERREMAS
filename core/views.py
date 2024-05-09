@@ -13,6 +13,7 @@ from decimal import Decimal
 from django.http import HttpResponse
 from django.db import transaction
 from .forms import SeguimientoPedidoForm
+from django.db.models import Q
 
 #FUNCION GENERICA QUE VALIDA EL GRUPO DEL USUARIO
 def grupo_requerido(nombre_grupo):
@@ -41,15 +42,28 @@ class TipoProductoViewset(viewsets.ModelViewSet):
 
 
 # Create your views here.
+from django.db.models import Q
+
 def index(request):
-    productosAll = Producto.objects.all()#SELECT * FROM producto
-    page = request.GET.get('page', 1) # OBTENEMOS LA VARIABLE DE LA URL, SI NO EXISTE NADA DEVUELVE 1
-    
+    # Obtén todos los productos
+    productosAll = Producto.objects.all()
+
+    # Paginación
+    page = request.GET.get('page', 1)
+    paginator = Paginator(productosAll, 3)
     try:
-        paginator = Paginator(productosAll, 3)
         productosAll = paginator.page(page)
-    except:
-        raise Http404
+    except PageNotAnInteger:
+        productosAll = paginator.page(1)
+    except EmptyPage:
+        productosAll = paginator.page(paginator.num_pages)
+
+    # Búsqueda
+    query = request.GET.get('q')
+    if query:
+        productosAll = Producto.objects.filter(
+            Q(Nombre__icontains=query) | Q(Descripcion__icontains=query)
+        )
 
     data = {
         'listado': productosAll,
@@ -63,7 +77,8 @@ def index(request):
         Carrito.imagen = request.POST.get('imagen_producto')
         Carrito.save()
         
-    return render(request,'core/index.html', data)
+    return render(request, 'core/index.html', data)
+
 @grupo_requerido('vendedor')
 def indexapi(request):
     #OBTIENE LOS DATOS DEL API
