@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect
 from .models import * #asi llamamos a todos los models
 from .forms import *
 from django.contrib import messages
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .serializers import *
 from rest_framework import viewsets
@@ -41,29 +41,26 @@ class TipoProductoViewset(viewsets.ModelViewSet):
     serializer_class = TipoProductoSerializer
 
 
-# Create your views here.
-from django.db.models import Q
-
 def index(request):
-    # Obtén todos los productos
+
     productosAll = Producto.objects.all()
 
-    # Paginación
-    page = request.GET.get('page', 1)
-    paginator = Paginator(productosAll, 3)
-    try:
-        productosAll = paginator.page(page)
-    except PageNotAnInteger:
-        productosAll = paginator.page(1)
-    except EmptyPage:
-        productosAll = paginator.page(paginator.num_pages)
-
-    # Búsqueda
+ 
     query = request.GET.get('q')
     if query:
-        productosAll = Producto.objects.filter(
+        productosAll = productosAll.filter(
             Q(Nombre__icontains=query) | Q(Descripcion__icontains=query)
         )
+
+  
+    page = request.GET.get('page', 1) 
+
+    
+    try:
+        paginator = Paginator(productosAll, 12)
+        productosAll = paginator.page(page)
+    except:
+        raise Http404
 
     data = {
         'listado': productosAll,
@@ -71,6 +68,7 @@ def index(request):
     }
 
     if request.method == 'POST':
+        # Procesa la solicitud POST para agregar elementos al carrito, asumiendo que hay un modelo item_carrito definido
         Carrito = item_carrito()
         Carrito.Nombre = request.POST.get('nombre_producto')
         Carrito.precio = request.POST.get('precio_producto')
