@@ -7,39 +7,34 @@
 {% block contenido %}
 
 <!-- Section: Design Block -->
-<section class="vh-100" style="background-color: #ffffff;">
-    <div class="container py-5 h-100">
-        
+<section class="vh-100 d-flex justify-content-center align-items-center" style="background-color: #1995AD">
+  <div class="container py-5">
       <div class="row d-flex justify-content-center align-items-center h-100">
-        <!-- IMG -->
-        <div class="col-lg-4 d-none d-lg-flex">
-        <img src="{% static 'core/img/perrilogin.png '%}" alt="Trendy Pants and Shoes"
-          class="w-100 rounded-t-5 rounded-tr-lg-0 rounded-bl-lg-5" />
-      </div>
-        
-        <div class="col-12 col-md-8 col-lg-6 col-xl-5"> 
-          <div class="card shadow-2-strong" style="border-radius: 1rem;">
-            <div class="card-body p-5 text-center">
-  
-              <h3 class="mb-5">Registro de usuario</h3>
-              <form method="POST">
-              {% csrf_token %}
-              {{ form | crispy }}
-  
-              <!-- Checkbox -->
-              
-              <div class="form-check d-flex justify-content-start mb-4">
-                <a href="{% url 'login' %}" class="mx-2">Login </a>  |
-                <a href="{% url 'index' %}" class="mx-2"> Ir al home</a>
+          <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+              <div class="card shadow-2-strong" style="border-radius: 1rem;">
+                  <div class="card-body p-5 text-center">
+
+                      <h3 style="color: #1995AD" class="mb-5">Registro de usuario</h3>
+                      <form method="POST">
+                          {% csrf_token %}
+                          {{ form | crispy }}
+
+                          <!-- Checkbox -->
+                          <div class="form-check d-flex justify-content-start mb-4">
+                              <a href="{% url 'login' %}" class="mx-2">Login</a> |
+                              <a href="{% url 'index' %}" class="mx-2">Ir al home</a>
+                          </div>
+
+                          <input type="submit" class="btn btn-primary btn-block mb-4" value="Registrar">
+                      </form>
+                  </div>
               </div>
-  
-              <input type="submit" class="btn btn-primary btn-block mb-4" value="Registrar">
-            </div>
           </div>
-        </div>
       </div>
-    </div>
-  </section>
+  </div>
+</section>
+
+
   {% endblock %}
 {% block js %}
 

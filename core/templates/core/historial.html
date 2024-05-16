@@ -2,7 +2,6 @@
 {% load static %}
 {% block nav %}
 <a href="{% url 'index' %}" class="nav-item nav-link">Inicio</a>
-<a href="{% url 'team' %}" class="nav-item nav-link">Productos</a>
 {% for group in user.groups.all %}
         {% if group.name == 'cliente' %}
 <a href="{% url 'historial' %}" class="nav-item nav-link active">Historial de compra</a>

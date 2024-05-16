@@ -4,6 +4,7 @@ from .models import *
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
 class SeguimientoPedidoForm(forms.ModelForm):
     class Meta:
@@ -22,8 +23,8 @@ class ProductoForm(ModelForm):
         widgets = {
             'Fecha_creacion' : forms.SelectDateWidget(years=range(1940, 2024))
         }
-    helper = FormHelper()  # Agrega esta línea
-    helper.add_input(Submit('submit', 'Guardar'))  # Agrega esta línea
+    helper = FormHelper() 
+    helper.add_input(Submit('submit', 'Guardar')) 
 
 class CarriForm(forms.ModelForm):
     class Meta:
@@ -31,4 +32,6 @@ class CarriForm(forms.ModelForm):
         fields = ['producto', 'items']
 
 class CustomUserCreationForm(UserCreationForm):
-    pass
+    class Meta:
+        model = User
+        fields = ['username','first_name','last_name','email','password1','password2']

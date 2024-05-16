@@ -1,4 +1,4 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect, get_object_or_404
 from .models import * #asi llamamos a todos los models
 from .forms import *
 from django.contrib import messages
@@ -234,41 +234,25 @@ def Carrito(request):
     # Obtener los productos en el carrito del usuario actual
     items = item_carrito.objects.filter(usuario=request.user)
 
-    # Calcular el precio total de cada producto
+    # Obtener el valor del dólar desde la API de Mindicador
+    respuesta = requests.get('https://mindicador.cl/api/dolar').json()
+    valor_usd = respuesta['serie'][0]['valor']
+
+    # Calcular el precio total de cada producto en CLP y USD
     for item in items:
         item.precio_total = item.items * item.producto.precio
+        item.precio_total_usd = item.precio_total / valor_usd
 
-    # Obtener la suscripción del usuario actual
-    try:
-        suscripcionUsuario = Suscripcion.objects.filter(usuario=request.user).first()
-    except Suscripcion.DoesNotExist:
-        suscripcionUsuario = None
-
-    # Definir los descuentos de acuerdo al nivel de suscripción
-    descuento_porcentaje = 0
-    if suscripcionUsuario:
-        if suscripcionUsuario.suscripcion.nombre == 'Plata':
-            descuento_porcentaje = 0.03
-        elif suscripcionUsuario.suscripcion.nombre == 'oro':
-            descuento_porcentaje = 0.05
-        elif suscripcionUsuario.suscripcion.nombre == 'Diamante':
-            descuento_porcentaje = 0.1
-
-    # Calcular el descuento total y el precio total con descuento
+    # Calcular el precio total del carrito en CLP y USD
     precio_total = sum(item.precio_total for item in items)
-    descuento_total = round(precio_total * descuento_porcentaje * -1)
-    precio_total_descuento = precio_total + descuento_total
-    descuento=round(descuento_porcentaje*100)
+    precio_total_usd = round(sum(item.precio_total_usd for item in items), 2)
 
-    # Pasar los productos, descuentos y precios al template como parte del contexto
+    # Pasar los productos, precios totales en CLP y USD al template como parte del contexto
     data = {
         'items': items,
-        'descuento_porcentaje': descuento_porcentaje,
-        'descuento':descuento,
         'precio_total': precio_total,
-        'descuento_total': descuento_total,
-        'precio_total_descuento': precio_total_descuento,
-        'suscripcionUsuario':suscripcionUsuario.suscripcion if suscripcionUsuario else None
+        'precio_total_usd': precio_total_usd,
+        # Otros datos que ya tienes en tu vista...
     }
 
     return render(request, 'core/Carrito.html', data)
@@ -534,3 +518,4 @@ def cambiar_estado_pedido(request, pedido_id):
         pedido.save()
         return redirect('seguimiento')
     return render(request, 'core/seguimiento.html', {'pedido': pedido})
+
