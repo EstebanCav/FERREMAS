@@ -30,6 +30,10 @@ urlpatterns = [
     path('historial/', historial,name='historial'),
     path('cambiar_estado/<int:pedido_id>/', cambiar_estado_pedido, name='cambiar_estado_pedido'),
     path('seguimiento/', seguimiento, name='seguimiento'),
+    path('CambiarGrupo/', CambiarGrupo, name='CambiarGrupo'),
+    path('ReporteVentas/', ReporteVentas, name='ReporteVentas'),
+    path('perfil/', views.perfil, name='perfil'),
+
 
 
     #Restablecer contraseña

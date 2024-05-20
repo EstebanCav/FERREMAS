@@ -1,3 +1,4 @@
+Descripcion.txt
 {% extends 'core/base.html' %}
 {% load static %}
 {% block nav %}
@@ -10,8 +11,17 @@
     {% for group in user.groups.all %}
         {% if group.name == 'vendedor' %}
 <a href="{% url 'add' %}" class="nav-item nav-link">Administracion</a>
+<a href="{% url 'CambiarGrupo' %}" class="nav-item nav-link">Cambiar Grupo</a>
         {% endif %}
     {% endfor %}
+
+    {% for group in user.groups.all %}
+        {% if group.name == 'bodeguero' %}
+<a href="{% url 'add' %}" class="nav-item nav-link">Administracion</a>
+<a href="{% url 'seguimiento' %}" class="nav-item nav-link">Seguimiento</a>
+        {% endif %}
+    {% endfor %}
+
 {% if user.is_authenticated %}
 <a href="{% url 'Carrito' %}" class=" nav-item nav-link"><i class="fa fa-shopping-cart "></i></a>
 {% else %}
@@ -39,6 +49,67 @@
 </div>
 <!--  Hero End -->
 
+{% for group in user.groups.all %}
+    {% if group.name == 'vendedor' %}
+
+<title>Generar Reporte de Ventas</title>
+    <style>
+        .container1 {
+            background-color: #A1D6E2; /* Color de fondo */
+            padding: 20px; /* Añade espacio alrededor del contenido */
+            margin-bottom: 20px; /* Espacio entre el contenedor y otros elementos */
+            border-radius: 10px; /* Bordes redondeados */
+        }
+
+        .formfec {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .formfec > * {
+            margin-right: 10px;
+        }
+
+        .botonfec[type="submit"] {
+            background-color: #1995AD;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #28aec9;
+        }
+
+        input[type="date"] {
+            border: 1px solid #A1D6E2;
+            border-radius: 20px;
+            padding: 8px;
+            font-size: 16px;
+        }
+    </style>
+    <div class="container1">
+        <h1>Generar Reporte de Ventas</h1>
+        <form class="formfec" action="{% url 'ReporteVentas' %}" method="GET">
+            <h4>Fecha Inicio:</h4>
+            <input type="date" id="fecha_inicio" name="fecha_inicio" required>
+            <h4>Fecha Final:</h4>
+            <input type="date" id="fecha_fin" name="fecha_fin" required>
+            <button class="botonfec" type="submit">Generar Reporte</button>
+        </form>
+    </div>
+
+{% endif %}
+{% endfor %}
+
 <!--  Barra de busqueda -->
 
 <style>
@@ -57,15 +128,15 @@
 
     .search-form button[type="submit"] {
         padding: 10px 20px;
-        background-color: #A1D6E2; /* Cambia el color de fondo del botón */
-        color: white; /* Cambia el color del texto del botón */
+        background-color: #A1D6E2; 
+        color: white; 
         border: none;
-        border-radius: 5px; /* Agrega bordes redondeados */
+        border-radius: 5px; 
         cursor: pointer;
     }
 
     .search-form button[type="submit"]:hover {
-        background-color: #A1D6E2; /* Cambia el color de fondo al pasar el cursor sobre el botón */
+        background-color: #bce6f0; 
     }
 </style>
 
@@ -89,7 +160,7 @@
         </div>
         <div class="row g-3">
 
-            {% for aux in listado %}
+        {% for aux in listado %}
 
             {% if aux.Stock > 0 %}
             <style>
@@ -101,7 +172,7 @@
                 .team-item {
                     display: flex;
                     flex-direction: column;
-                    align-items: center; /* Centra horizontalmente los elementos */
+                    align-items: center; 
                 }
                 .image-container {
                     width: 350px;
@@ -111,7 +182,7 @@
                     justify-content: center;
                     border-radius: 50%;
                     overflow: hidden;
-                    margin-bottom: 1rem; /* Ajuste de margen inferior */
+                    margin-bottom: 1rem; 
                 }
                 .team-item img {
                     width: 100%;
@@ -176,9 +247,10 @@
                             }
                         </style>
                         
-                        <button type="button" class="btn btn-primary btn-circle" onclick="openModal()">
+                        <button type="button" class="btn btn-primary btn-circle" onclick="openModal('{{ aux.Descripcion }}')">
                             <i class="fas fa-eye"></i>
                         </button>
+                        
                         
                         <!-- The Modal -->
                         <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -186,25 +258,29 @@
                                 <div class="modal-content">
                                     <!-- Modal Header -->
                                     <div class="modal-header">
-                                        <h5 style="color: #1995AD;" class="modal-title">{{ aux.Nombre }}</h5>
+                                        <h5 style="color: #1995AD;" class="modal-title" id="modalTitle"></h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                     <!-- Modal Body -->
-                                    <div class="modal-body">
-                                        {{ aux.Descripcion }}
-                                    </div>
+                                    <div class="modal-body" id="modalBody"></div>
                                 </div>
                             </div>
                         </div>
                         
                         <script>
-                            function openModal() {
+                            function openModal(descripcion) {
                                 var myModal = new bootstrap.Modal(document.getElementById('myModal'), {
                                     keyboard: false
                                 });
+                                document.getElementById('modalBody').innerHTML = descripcion;
                                 myModal.show();
                             }
                         </script>
+
+
+
+
+                        
                         
                         
                     </div>
@@ -217,7 +293,7 @@
             
             
             
-            {% endif %}
+        {% endif %}
             {% endfor %}
 
         </div>
@@ -227,7 +303,8 @@
 
 
 
-<!-- final productos populares-->
+
+
 
 
 

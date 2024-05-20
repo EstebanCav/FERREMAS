@@ -10,3 +10,5 @@ pymysql
 mysqlclient
 django-jazzmin
 django-extensions
+pandas
+openpyxl

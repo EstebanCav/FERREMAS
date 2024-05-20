@@ -18,7 +18,7 @@ class ProductoForm(ModelForm):
     Descripcion = forms.CharField(min_length=10, max_length=200, widget=forms.Textarea(attrs={"rows":4}))
 
     class Meta:
-        model = Pedido
+        model = Producto
         fields = '__all__'
         widgets = {
             'Fecha_creacion' : forms.SelectDateWidget(years=range(1940, 2024))
@@ -35,3 +35,8 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username','first_name','last_name','email','password1','password2']
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email']  # Campos del usuario que se pueden editar

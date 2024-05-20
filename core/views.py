@@ -12,8 +12,10 @@ from django.contrib.auth.models import Group
 from decimal import Decimal
 from django.http import HttpResponse
 from django.db import transaction
-from .forms import SeguimientoPedidoForm
 from django.db.models import Q
+import pandas as pd
+from django.utils.dateparse import parse_date
+from django.utils import timezone
 
 #FUNCION GENERICA QUE VALIDA EL GRUPO DEL USUARIO
 def grupo_requerido(nombre_grupo):
@@ -39,7 +41,6 @@ class TipoProductoViewset(viewsets.ModelViewSet):
     queryset = TipoProducto.objects.all()
     #queryset = Producto.objects.filter(tipo=1)
     serializer_class = TipoProductoSerializer
-
 
 def index(request):
 
@@ -76,6 +77,33 @@ def index(request):
         Carrito.save()
         
     return render(request, 'core/index.html', data)
+
+
+@grupo_requerido('vendedor')
+def CambiarGrupo(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        group_name = request.POST.get('group_name')
+        try:
+            user = User.objects.get(id=user_id)
+            group = Group.objects.get(name=group_name)
+            user.groups.clear()
+            user.groups.add(group)
+        except User.DoesNotExist:
+            pass
+        except Group.DoesNotExist:
+            pass
+        return redirect('CambiarGrupo')
+
+    users = User.objects.all()
+    groups = Group.objects.all()
+
+    data = {
+        'users': users,
+        'groups': groups,
+    }
+
+    return render(request, 'core/CambiarGrupo.html', data)
 
 @grupo_requerido('vendedor')
 def indexapi(request):
@@ -127,18 +155,18 @@ def salir (request):
     messages.success(request,F"Tu sesion se ha cerrado")
     return redirect(to="index")
 
+@grupo_requerido('vendedor')
 def add(request):
-    data={
-        'form' : ProductoForm()
+    data = {
+        'form': ProductoForm(initial={'Fecha_creacion': timezone.now()})  # Establece la fecha actual como valor inicial
     }
-    if request.method =='POST':
-        formulario = ProductoForm(request.POST, files=request.FILES)#OBTIENE LA DATA DEL FORMULARIO
+    if request.method == 'POST':
+        formulario = ProductoForm(request.POST, files=request.FILES)
         if formulario.is_valid():
-            formulario.save() #INSERT INTO...........
-            #data['msj']="Producto guardado correctamente"
+            formulario.save()
             messages.success(request, "Producto almacenado correctamente")
 
-    return render(request,'core/add-product.html', data)
+    return render(request, 'core/add-product.html', data)
 
 
 
@@ -480,10 +508,10 @@ def historial(request):
 
     return render(request,'core/historial.html', data)
 
-@grupo_requerido('vendedor')
+@grupo_requerido('bodeguero')
 def seguimiento(request):
-    pedidos = Pedido.objects.all()  # Obtiene todos los pedidos
-    usuarios = User.objects.all() # OBTENEMOS LA VARIABLE DE LA URL, SI NO EXISTE NADA DEVUELVE 1
+    pedidos = Pedido.objects.all()
+    usuarios = User.objects.all() 
 
 
     nombre_usuario = request.GET.get('usuario')
@@ -504,7 +532,7 @@ def seguimiento(request):
 
     return render(request, 'core/seguimiento.html', data)
 
-@grupo_requerido('vendedor')
+@grupo_requerido('bodeguero')
 def cambiar_estado_pedido(request, pedido_id):
     # Obtener el pedido específico
     pedido = Pedido.objects.get(pk=pedido_id)
@@ -518,4 +546,55 @@ def cambiar_estado_pedido(request, pedido_id):
         pedido.save()
         return redirect('seguimiento')
     return render(request, 'core/seguimiento.html', {'pedido': pedido})
+
+
+def ReporteVentas(request):
+
+    fecha_inicio_str = request.GET.get('fecha_inicio')
+    fecha_fin_str = request.GET.get('fecha_fin')
+
+
+    fecha_inicio = parse_date(fecha_inicio_str)
+    fecha_fin = parse_date(fecha_fin_str)
+
+
+    pedidos = Pedido.objects.filter(fecha_compra__date__range=[fecha_inicio, fecha_fin])
+
+
+    data = []
+    for pedido in pedidos:
+        data.append({
+            'Usuario': pedido.usuario.username,
+            'Producto': pedido.producto.Nombre,
+            'Items': pedido.items,
+            'Precio Total': pedido.precio_total,
+            'Fecha de Compra': pedido.fecha_compra,
+            'Estado': pedido.estado,
+        })
+
+    df = pd.DataFrame(data)
+
+
+    if not df.empty:
+        df['Fecha de Compra'] = pd.to_datetime(df['Fecha de Compra']).dt.tz_localize(None)
+
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="Reporte de ventas FERREMAS.xlsx"'
+    df.to_excel(response, index=False, engine='openpyxl')
+
+    return response
+
+
+@login_required
+def perfil(request):
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('index')  
+    else:
+        form = UserProfileForm(instance=request.user)
+    return render(request, 'core/perfil.html', {'form': form})
+
 
