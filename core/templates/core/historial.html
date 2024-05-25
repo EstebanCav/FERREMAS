@@ -33,20 +33,21 @@
 <div class="container">
     <div class="row">
         {% for historial in historiales %}
-        <p>Código de compra: {{ historial.codigo }}</p>
+        <h1>Código de compra: {{ historial.codigo }}</h1>
         
         {% for pedido in historial.compra.all %}
         <div class="card mb-4 rounded-3 shadow-sm border-secondary flex-row-reverse">
             <div class="card-body">
-                <p>Nombre: {{ pedido.producto.Nombre }}</p>   
-                <p>Tipo: {{ pedido.producto.tipo }}</p>
-                <p>Descripcion: {{ pedido.producto.Descripcion }}</p>
-                <p>Cantidad: {{ pedido.items }}</p>
-                <p>Precio: {{ pedido.producto.precio }} </p>
-                <p>Estado del pedido: {{ pedido.estado }}</p>
-                <p>Cantidad pagada: {{ pedido.precio_total|floatformat:0 }}</p>
+
+                <h3 style="color: #1995AD;">Nombre: {{ pedido.producto.Nombre }}                    </h3>
+                <h3 style="color: #1995AD;">Marca: {{ pedido.producto.tipo }}                        </h3>
+                <h3 style="color: #1995AD;">Cantidad: {{ pedido.items }}                            </h3>
+                <h3 style="color: #1995AD;">Precio: {{ pedido.producto.precio }}                    </h3>
+                <h3 style="color: #1995AD;">Estado del pedido: {{ pedido.estado }}                  </h3>
+                <h3 style="color: #1995AD;">Cantidad pagada: {{ pedido.precio_total|floatformat:0 }}</h3>
                 <br>
-                <p>Fecha de compra: {{ pedido.fecha_compra }}</p>
+                <h3 style="color: #1995AD;">Fecha de compra: {{ pedido.fecha_compra|date }}         </h3>
+
             </div>
             <img class="img" style="width: 320px;" src="{{ pedido.producto.imagen.url }}" alt="Colorlib Template">
         </div>

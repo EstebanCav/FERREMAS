@@ -10,19 +10,27 @@ import requests
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import Group
 from decimal import Decimal
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db import transaction
 from django.db.models import Q
 import pandas as pd
 from django.utils.dateparse import parse_date
 from django.utils import timezone
+from functools import wraps
 
 #FUNCION GENERICA QUE VALIDA EL GRUPO DEL USUARIO
-def grupo_requerido(nombre_grupo):
-    def decorator(view_fuc):
-        @user_passes_test(lambda user: user.groups.filter(name=nombre_grupo).exists())
-        def wrapper(request, *arg, **kwargs):
-            return view_fuc(request, *arg, **kwargs)
+
+def grupo_requerido(*nombres_grupos):
+    def check_grupo(user):
+        return user.groups.filter(name__in=nombres_grupos).exists()
+
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapper(request, *args, **kwargs):
+            if check_grupo(request.user):
+                return view_func(request, *args, **kwargs)
+            else:
+                return HttpResponse("No tienes permiso para acceder a esta página.")
         return wrapper
     return decorator
 
@@ -155,7 +163,7 @@ def salir (request):
     messages.success(request,F"Tu sesion se ha cerrado")
     return redirect(to="index")
 
-@grupo_requerido('vendedor')
+@grupo_requerido('vendedor','bodeguero')
 def add(request):
     data = {
         'form': ProductoForm(initial={'Fecha_creacion': timezone.now()})  # Establece la fecha actual como valor inicial
@@ -171,18 +179,18 @@ def add(request):
 
 
 
-@grupo_requerido('vendedor')
+@grupo_requerido('vendedor','bodeguero')
 def update(request, id):
-    pedido = Pedido.objects.get(id=id)  # Obtener un pedido por su ID
+    producto = get_object_or_404(Producto, id=id)  # Obtener un producto por su ID
 
     if request.method == 'POST':
-        form = PedidoForm(request.POST, instance=pedido)
+        form = ProductoForm(request.POST, instance=producto)
         if form.is_valid():
             form.save()
-            messages.success(request, "Estado del pedido modificado correctamente")
+            messages.success(request, "Producto actualizado correctamente")
             return redirect('index')
     else:
-        form = PedidoForm(instance=pedido)
+        form = ProductoForm(instance=producto)
 
     data = {
         'form': form,
@@ -190,7 +198,7 @@ def update(request, id):
 
     return render(request, 'core/add-product.html', data)
 
-@grupo_requerido('vendedor')
+@login_required
 def delete(request,id):
     producto = Producto.objects.get(id=id) #OBTIENE UN PRODUCTO POR EL ID
     producto.delete()
@@ -199,7 +207,7 @@ def delete(request,id):
 
 
 
-@grupo_requerido('cliente')
+@login_required
 def agregar_al_carrito(request, producto_id):
     # Obtener el usuario actualmente autenticado
     usuario = request.user
@@ -227,7 +235,7 @@ def agregar_al_carrito(request, producto_id):
 
 
 
-@grupo_requerido('cliente')
+@login_required
 def actualizar_carrito(request):
     if request.method == 'POST':
         item_id = request.POST.get('item_id')
@@ -257,7 +265,7 @@ def actualizar_carrito(request):
 
     return redirect('core/Carrito.html') 
 
-@grupo_requerido('cliente')
+@login_required
 def Carrito(request):
     # Obtener los productos en el carrito del usuario actual
     items = item_carrito.objects.filter(usuario=request.user)
@@ -285,7 +293,7 @@ def Carrito(request):
 
     return render(request, 'core/Carrito.html', data)
 
-
+@login_required
 def eliminarCarro(request, id):
     carrito = item_carrito.objects.get(id=id)
     
@@ -304,32 +312,6 @@ def eliminarCarro(request, id):
 
 def Contact(request):
     return render(request,'core/Contact.html')
-@grupo_requerido('cliente')
-def Pagar(request):
-    usuario = request.user
-    
-    # Obtener los productos en el carrito del usuario
-    items = item_carrito.objects.filter(usuario=usuario)
-    precio_total = sum(item.producto.precio * item.items for item in items)
-
-
-    data={
-        'listaCarrito' : Carrito,
-        'precio_total' : precio_total
-    }
-    #logica de sumar los precios del carrito
-    respuesta = requests.get('https://mindicador.cl/api/dolar').json()
-    valor_usd = respuesta['serie'][0]['valor']
-
-    valor_Carrito = precio_total
-    valor_total = valor_Carrito/valor_usd
-
-    data = {
-
-        'valor': round(valor_total, 2)
-    }
-
-    return render(request,'core/Pagar.html',data)
     
 
 
@@ -445,7 +427,7 @@ def suscribirse(request):
     return render(request, 'core/suscribirse.html')
 
 
-@grupo_requerido('cliente')
+@login_required
 def Finalcompra(request):
     carrito_items = item_carrito.objects.all()
 
@@ -494,43 +476,37 @@ def Varisus(request):
 
     return render(request, 'core/team.html', data)
 
-@grupo_requerido('cliente')
+@login_required
 def historial(request):
     # Obtener el historial de compras del usuario actual
     pedidos = Pedido.objects.filter(usuario=request.user)
-    historiales = HistorialCompra.objects.filter(compra__in=pedidos)
-
+    historiales = HistorialCompra.objects.filter(compra__in=pedidos).distinct()
 
     # Pasar el historial de compras al contexto de la plantilla
     data = {
         'historiales': historiales
     }
 
-    return render(request,'core/historial.html', data)
+    return render(request, 'core/historial.html', data)
 
-@grupo_requerido('bodeguero')
+@grupo_requerido('vendedor','bodeguero')
 def seguimiento(request):
-    pedidos = Pedido.objects.all()
+    pedidos = Pedido.objects.all().select_related('usuario', 'producto')
     usuarios = User.objects.all() 
 
-
     nombre_usuario = request.GET.get('usuario')
-
-    
-
-    historiales = HistorialCompra.objects.filter(compra__in=pedidos)
 
     if nombre_usuario:
         pedidos = pedidos.filter(usuario__username=nombre_usuario)
 
     data = {
         'pedidos': pedidos,
-        'historiales': historiales,
         'usuarios': usuarios,
         'nombre_usuario': nombre_usuario
     }
 
     return render(request, 'core/seguimiento.html', data)
+
 
 @grupo_requerido('bodeguero')
 def cambiar_estado_pedido(request, pedido_id):
@@ -547,7 +523,7 @@ def cambiar_estado_pedido(request, pedido_id):
         return redirect('seguimiento')
     return render(request, 'core/seguimiento.html', {'pedido': pedido})
 
-
+@grupo_requerido('contador')
 def ReporteVentas(request):
 
     fecha_inicio_str = request.GET.get('fecha_inicio')
@@ -596,5 +572,160 @@ def perfil(request):
     else:
         form = UserProfileForm(instance=request.user)
     return render(request, 'core/perfil.html', {'form': form})
+
+
+@login_required
+def PagarCarrito(request):
+    usuario = request.user
+    items = item_carrito.objects.filter(usuario=usuario)
+    precio_total = sum(item.producto.precio * item.items for item in items)
+    cantidad_total = sum(item.items for item in items)  # Calcular la cantidad total de productos
+
+    respuesta = requests.get('https://mindicador.cl/api/dolar').json()
+    valor_usd = respuesta['serie'][0]['valor']
+
+    valor_Carrito = precio_total
+    valor_total = valor_Carrito / valor_usd
+
+    # Filtrar solicitudes no autorizadas del usuario
+    solicitudes = SolicitudPago.objects.filter(usuario=usuario, autorizado=False, compra_completada=False)
+
+    if solicitudes.exists():
+        solicitud_pago = solicitudes.first()
+        solicitud_pago.precio_total = precio_total
+        solicitud_pago.valor_total = valor_total
+        solicitud_pago.items = cantidad_total
+        solicitud_pago.save()
+    else:
+        solicitud_pago = SolicitudPago.objects.create(
+            usuario=usuario,
+            precio_total=precio_total,
+            valor_total=valor_total,
+            items=cantidad_total,
+            autorizado=False,
+            compra_completada=False,
+        )
+
+    data = {
+        'listaCarrito': items,
+        'precio_total': precio_total,
+        'valor': round(valor_total, 2),
+        'solicitud_pago': solicitud_pago,
+    }
+
+    return render(request, 'core/PagarCarrito.html', data)
+
+
+@login_required
+def Pagar(request):
+    usuario = request.user
+    items = item_carrito.objects.filter(usuario=usuario)
+    precio_total = sum(item.producto.precio * item.items for item in items)
+    cantidad_total = sum(item.items for item in items)  # Calcular la cantidad total de productos
+
+    respuesta = requests.get('https://mindicador.cl/api/dolar').json()
+    valor_usd = respuesta['serie'][0]['valor']
+
+    valor_Carrito = precio_total
+    valor_total = valor_Carrito / valor_usd
+
+    # Filtrar solicitudes no autorizadas del usuario
+    solicitudes = SolicitudPago.objects.filter(usuario=usuario, autorizado=False, compra_completada=False)
+
+    if solicitudes.exists():
+        solicitud_pago = solicitudes.first()
+        solicitud_pago.precio_total = precio_total
+        solicitud_pago.valor_total = valor_total
+        solicitud_pago.items = cantidad_total
+        solicitud_pago.save()
+    else:
+        solicitud_pago = SolicitudPago.objects.create(
+            usuario=usuario,
+            precio_total=precio_total,
+            valor_total=valor_total,
+            items=cantidad_total,
+            autorizado=False,
+            compra_completada=False,
+        )
+
+    data = {
+        'listaCarrito': items,
+        'precio_total': precio_total,
+        'valor': round(valor_total, 2),
+        'solicitud_pago': solicitud_pago,
+    }
+
+    return render(request, 'core/Pagar.html', data)
+
+
+
+def es_vendedor(usuario):
+    return usuario.groups.filter(name='vendedor').exists()
+
+@grupo_requerido('vendedor','bodeguero')
+def AutorizarPago(request, solicitud_id):
+    solicitud = get_object_or_404(SolicitudPago, id=solicitud_id)
+    if request.method == 'POST':
+        solicitud.autorizado = True
+        solicitud.save()
+        return redirect('listar_solicitudes_pago')
+    return render(request, 'core/AutorizarPago.html', {'solicitud': solicitud})
+
+@grupo_requerido('vendedor','bodeguero')
+def ListarSolicitudesPago(request):
+    solicitudes_pendientes = SolicitudPago.objects.filter(autorizado=False).prefetch_related('usuario')
+
+    # Para cada solicitud, obtener los productos y cantidades con sus tipos
+    for solicitud in solicitudes_pendientes:
+        items = item_carrito.objects.filter(usuario=solicitud.usuario).select_related('producto')
+        productos = {}
+        for item in items:
+            producto_nombre = item.producto.Nombre
+            producto_tipo = item.producto.tipo.descripcion
+            if producto_nombre in productos:
+                productos[producto_nombre]['cantidad'] += item.items
+            else:
+                productos[producto_nombre] = {
+                    'cantidad': item.items,
+                    'tipo': producto_tipo
+                }
+        solicitud.productos = productos
+
+    return render(request, 'core/ListarSolicitudesPago.html', {'solicitudes': solicitudes_pendientes})
+
+
+
+
+def CompletarCompra(request, solicitud_id):
+    solicitud_pago = get_object_or_404(SolicitudPago, id=solicitud_id)
+
+    if not solicitud_pago.autorizado:
+
+        pass
+
+    return render(request, 'completar_compra.html', {'solicitud_pago': solicitud_pago})
+
+def pagina_autorizacion_exitosa(request):
+    return render(request, 'core/PaginaAutorizacionExitosa.html')
+
+def pagina_compra_exitosa(request):
+    return render(request, 'core/PaginaCompraExitosa.html')
+
+@grupo_requerido('vendedor','bodeguero')
+def verificar_autorizacion(request, solicitud_id):
+    solicitud = get_object_or_404(SolicitudPago, id=solicitud_id)
+    data = {
+        'autorizado': solicitud.autorizado
+    }
+    return JsonResponse(data)
+
+@grupo_requerido('vendedor','bodeguero')
+def RechazarPago(request, solicitud_id):
+    solicitud = get_object_or_404(SolicitudPago, id=solicitud_id)
+    if request.method == 'POST':
+        solicitud.delete()  # Eliminar la solicitud
+        return redirect('listar_solicitudes_pago')  # Redirigir a la lista de solicitudes de pago
+    return render(request, 'core/rechazar_pago.html', {'solicitud': solicitud})
+
 
 

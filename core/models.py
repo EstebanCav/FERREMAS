@@ -36,10 +36,11 @@ class Producto(models.Model):
 class item_carrito(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE, default=None)
-    items = models.IntegerField(default=0)
+    items = models.IntegerField(default=0)  # Asegúrate de que este campo esté correctamente definido
 
     class Meta:
         db_table = 'db_item_carrito'
+
 
 
 class Pedido(models.Model):
@@ -91,5 +92,20 @@ class Suscripcion(models.Model):
 
     def __str__(self):
         return self.usuario.username
+
+class SolicitudPago(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    precio_total = models.DecimalField(max_digits=10, decimal_places=2)
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2)
+    items = models.IntegerField(default=0)  # Campo para almacenar la cantidad de productos
+    autorizado = models.BooleanField(default=False)
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    fecha_autorizacion = models.DateTimeField(null=True, blank=True)
+    autorizado_por = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='autorizado_por', null=True, blank=True)
+    compra_completada = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Solicitud de {self.usuario.username}"
+
 
 

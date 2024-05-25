@@ -20,7 +20,18 @@ urlpatterns = [
     path('',index, name="index"),
     path('indexapi',indexapi, name="indexapi"),
     path('team/',team, name="team"),
-    path('Pagar/',Pagar, name="Pagar"),
+
+    path('PagarCarrito/', PagarCarrito, name='PagarCarrito'),
+    path('pagar/', Pagar, name='pagar'),
+    path('AutorizarPago/<int:solicitud_id>/', AutorizarPago, name='AutorizarPago'),
+    path('listar_solicitudes_pago/', ListarSolicitudesPago, name='listar_solicitudes_pago'),
+    path('completar_compra/<int:solicitud_id>/', CompletarCompra, name='completar_compra'),
+    path('autorizacion_exitosa/', pagina_autorizacion_exitosa, name='pagina_autorizacion_exitosa'),
+    path('compra_exitosa/', pagina_compra_exitosa, name='pagina_compra_exitosa'),
+    path('verificar_autorizacion/<int:solicitud_id>/', verificar_autorizacion, name='verificar_autorizacion'),
+    path('rechazar_pago/<int:solicitud_id>/', views.RechazarPago, name='RechazarPago'),
+
+
     path('suscripcion/',suscripcion,name='suscripcion'),
     path('suscribirse/',suscribirse,name='suscribirse'),
     path('Finalcompra/',Finalcompra,name='Finalcompra'),
@@ -54,6 +65,8 @@ urlpatterns = [
     path('deleteSuscripcion/<id>/', deleteSuscripcion, name='deleteSuscripcion'),
     path('updateSuscripcion/<id>/',updateSuscripcion,name='updateSuscripcion'),
     path('salir/', salir, name='salir'),
+
+    
     
 
 

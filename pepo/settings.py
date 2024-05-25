@@ -84,6 +84,18 @@ WSGI_APPLICATION = 'pepo.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 
+
+DATABASES= {
+    'default': {
+        'ENGINE':'django.db.backends.mysql',
+        'NAME':'perripapitos',
+        'HOST':'localhost',
+        'PORT':'3306',
+        'USER':'root',
+        'PASSWORD':'',
+    }
+}
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.oracle',
@@ -96,18 +108,6 @@ DATABASES = {
             'TBLSPACE_TMP': 'default_test_tbls_tmp',
         },
     },
-}
-
-"""
-DATABASES= {
-    'default': {
-        'ENGINE':'django.db.backends.mysql',
-        'NAME':'perripapitos',
-        'HOST':'localhost',
-        'PORT':'3306',
-        'USER':'root',
-        'PASSWORD':'',
-    }
 }
 """
 #python manage.py makemigrations
@@ -136,6 +136,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = 'es-mx'
+
+TIME_ZONE = 'America/Santiago'
 
 TIME_ZONE = 'UTC'
 
