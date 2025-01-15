@@ -728,4 +728,3 @@ def RechazarPago(request, solicitud_id):
     return render(request, 'core/rechazar_pago.html', {'solicitud': solicitud})
 
 
-

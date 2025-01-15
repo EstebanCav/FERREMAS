@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path,os
+import os
+from dotenv import load_dotenv
+import dj_database_url
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +30,7 @@ SECRET_KEY = 'django-insecure-6-^%dxw1&z3&u-l%y(3@@_7yw*67njo-uy+rmjzw=i7o4z3rag
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.vercel.app']
 
 #'admin_interface',
 
@@ -84,7 +89,14 @@ WSGI_APPLICATION = 'pepo.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 
-
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600,  # Conexiones persistentes
+        ssl_require=True   # Forzar conexiones seguras
+    )
+}
+"""
 DATABASES= {
     'default': {
         'ENGINE':'django.db.backends.mysql',
@@ -95,6 +107,7 @@ DATABASES= {
         'PASSWORD':'',
     }
 }
+"""
 """
 DATABASES = {
     'default': {

@@ -9,10 +9,10 @@ class TipoProductoSerializer(serializers.ModelSerializer):
 
 
 class ProductoSerializer(serializers.ModelSerializer):
-    tipo = TipoProductoSerializer(read_only=True)
     class Meta:
         model = Producto
-        fields ='__all__'
+        fields = '__all__'
+
 
 
 class TipoSuscripcionSerializer(serializers.ModelSerializer):
